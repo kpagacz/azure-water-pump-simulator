@@ -5,3 +5,15 @@ Bachelors Degree.
 
 # Description of the task
 The instructions in Polish for the task are in the file `Case study Azure IoT.pdf`.
+
+# Installation instructions
+1. Clone the repository.
+2. Navigate to the cloned directory.
+3. Install the package.
+```sh
+pip install .
+```
+4. Run the simulator.
+```
+simulate --help
+```
