@@ -1,9 +1,11 @@
 import threading
-from time import sleep
-from azure.iot.device import IoTHubDeviceClient
 import json
+import logging
+from time import sleep
 from datetime import datetime
+from azure.iot.device import IoTHubDeviceClient, Message
 
+INTERVAL:int = 20
 
 class PumpReporter(threading.Thread):
     def __init__(self, device_client: IoTHubDeviceClient, *args, **kwargs):
@@ -22,23 +24,26 @@ class PumpReporter(threading.Thread):
     def set_pressure(self, pressure: float) -> None:
         self._pressure = pressure
         self._device_client.patch_twin_reported_properties({
-            "watering_power": f"{self._pressure} L/min"
+            "watering_power": self._pressure
         })
+        logging.info(
+            "Patched device twin reporter properties with watering pressure: %s", f"{self._pressure} L/min")
 
     def set_watering(self, is_watering: bool) -> None:
         self._is_watering = is_watering
 
     def run(self) -> None:
         self._device_client.patch_twin_reported_properties({
-            "watering_power": f"{self._pressure} L/min",
+            "watering_power": self._pressure,
             "alarm_state": False
         })
         while(self._stop_flag.is_set() is False):
             try:
-              self._device_client.send_message(self.prepare_message())
+                logging.info("Sent message to hub %s", self.prepare_message())
+                self._device_client.send_message(self.prepare_message())
             except RuntimeError as err:
-              print("Error sending the message from the simulator", err)
-            sleep(5)
+                print("Error sending the message from the simulator", err)
+            sleep(INTERVAL)
 
     def prepare_message(self) -> str:
         payload: dict = {
@@ -46,4 +51,4 @@ class PumpReporter(threading.Thread):
             "pressure": self._pressure,
             "is_watering": self._is_watering
         }
-        return json.JSONEncoder().encode(payload)
+        return Message(json.dumps(payload).encode("utf-8"), content_encoding="utf-8", content_type="application/json")

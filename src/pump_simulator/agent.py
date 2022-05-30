@@ -12,12 +12,13 @@ def agent():
     """Azure IoT Water Pump Simulator
 
     Usage:
-      simulate (--conn-string=<connection_string>)
+      simulate [--verbose] (--conn-string=<connection_string>)
       simulate (-h | --help)
       simulate --version
 
     Options:
       -c --conn-string=<connection_string>    The Azure IoT Connection String.
+      -v --verbose                            Increase verbosity.
       -h --help                               Show this help page.
       --version                               Show the version.
     """
@@ -27,6 +28,10 @@ def agent():
     connection_string: str = arguments["--conn-string"]
     if (isinstance(connection_string, str) is False):
         raise ValueError("connection_string was not a string")
+
+    # Logging setup
+    if (arguments["--verbose"]):
+        logging.basicConfig(level=logging.INFO)
 
     welcome_message: str = """Welcome to the Azure IoT Water Pump Simulator v0.1.0
 
@@ -61,31 +66,53 @@ def method_request_handler(pump_reporter: PumpReporter, device_client: device.Io
         logging.info(
             "Received a direct method request with the method name %s", method_name)
         if (method_name == "causeIssue"):
-            cause_issue(method_request.payload, device_client)
+            try:
+                cause_issue(method_request.payload, device_client)
+                device_client.send_method_response(
+                    device.MethodResponse(method_request.request_id, 200))
+            except Exception:
+                device_client.send_method_response(
+                    device.MethodResponse(method_request.request_id, 500))
         if (method_name == "stopWatering"):
-            stop_watering(pump_reporter)
+            try:
+                stop_watering(pump_reporter)
+                device_client.send_method_response(
+                    device.MethodResponse(method_request.request_id, 200))
+            except Exception:
+                device_client.send_method_response(
+                    device.MethodResponse(method_request.request_id, 500))
         if (method_name == "resetAlarm"):
-            reset_alarm(device_client)
+            try:
+                reset_alarm(device_client)
+                device_client.send_method_response(
+                    device.MethodResponse(method_request.request_id, 200))
+            except Exception:
+                device_client.send_method_response(
+                    device.MethodResponse(method_request.request_id, 500))
     return handler
 
 
 def cause_issue(reason: str, device_client: device.IoTHubDeviceClient) -> None:
+    logging.info("Causing a simulated issue for reason: %s", reason)
     payload: dict = {
         "timestamp": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
         "alarm": reason
     }
-    device_client.send_message(json.JSONEncoder().encode(payload))
+    device_client.send_message(device.Message(json.dumps(payload).encode(
+        "utf-8"), content_encoding="utf-8", content_type="application/json"))
     device_client.patch_twin_reported_properties({
         "alarm_state": True
     })
 
 
 def stop_watering(pump_reporter: PumpReporter):
+    logging.info("Stopped watering")
     pump_reporter.set_pressure(0)
     pump_reporter.set_watering(False)
 
 
 def reset_alarm(device_client: device.IoTHubDeviceClient):
+    logging.info("Resetting the actual alarm property in the twin device")
     device_client.patch_twin_reported_properties({
         "alarm_state": False
     })
@@ -93,6 +120,8 @@ def reset_alarm(device_client: device.IoTHubDeviceClient):
 
 def receive_desired_twin_handler(pump_reporter: PumpReporter, device_client: device.IoTHubDeviceClient):
     def handler(desired_properties: dict):
+        logging.info(
+            "Receive a patch to the desired properties: %s", desired_properties)
         if ("watering_power" in desired_properties.keys()):
             if(isinstance(desired_properties["watering_power"], (int, float)) is False
                or desired_properties["watering_power"] < 0):
@@ -104,6 +133,7 @@ def receive_desired_twin_handler(pump_reporter: PumpReporter, device_client: dev
 
 
 def on_message_received_handler(message: device.Message):
+    logging.info("Received a direct message: %s", message.data)
     print(message.data)
 
 

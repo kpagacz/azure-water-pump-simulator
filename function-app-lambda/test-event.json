@@ -1,0 +1,19 @@
+{
+  "id": "19e9a06e-c0cb-2661-028c-4084f2168fa5",
+  "data": {
+    "properties": {},
+    "systemProperties": {
+      "iothub-content-type": "application/json",
+      "iothub-content-encoding": "utf-8",
+      "iothub-connection-device-id": "new",
+      "iothub-connection-auth-method": "{\"scope\":\"device\",\"type\":\"sas\",\"issuer\":\"iothub\",\"acceptingIpFilterRule\":null}",
+      "iothub-connection-auth-generation-id": "637894458201290291",
+      "iothub-enqueuedtime": "2022-05-30T16:04:02.629Z",
+      "iothub-message-source": "Telemetry"
+    },
+    "body": { "timestamp": "30/05/2022 18:04:02", "alarm": "test" }
+  },
+  "topic": "/SUBSCRIPTIONS/9C892ECD-DB21-4CD0-AC19-9430E74484E2/RESOURCEGROUPS/UL-IOT/PROVIDERS/MICROSOFT.DEVICES/IOTHUBS/KP-HUB",
+  "subject": "devices/new",
+  "event_type": "Microsoft.Devices.DeviceTelemetry"
+}
