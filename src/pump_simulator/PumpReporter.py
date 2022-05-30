@@ -5,7 +5,7 @@ from time import sleep
 from datetime import datetime
 from azure.iot.device import IoTHubDeviceClient, Message
 
-INTERVAL:int = 20
+INTERVAL:int = 5
 
 class PumpReporter(threading.Thread):
     def __init__(self, device_client: IoTHubDeviceClient, *args, **kwargs):

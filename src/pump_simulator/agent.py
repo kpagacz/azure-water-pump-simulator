@@ -18,7 +18,7 @@ def agent():
 
     Options:
       -c --conn-string=<connection_string>    The Azure IoT Connection String.
-      -v --verbose                            Increase verbosity.
+      -v --verbose                            Increase logging verbosity.
       -h --help                               Show this help page.
       --version                               Show the version.
     """
@@ -35,6 +35,19 @@ def agent():
 
     welcome_message: str = """Welcome to the Azure IoT Water Pump Simulator v0.1.0
 
+This application sends simulated water pressure readings to the IoT Hub every 5 seonds
+along with the flag whether the watering is happening.
+
+On top of that this application exposes direct methods:
+* causeIssue that triggers an alarm
+* stopWatering that stops watering and decreases pressure in the simulated pump
+* startWatering that starts watering
+* resetAlarm that resets a triggered alarm.
+
+
+The watering process is controlled by a twin device property `watering_power`.
+Any changes to the desired watering power will affect the pressure in the pump
+imitating the increased flow through the pump.
 
 Any direct messages received by this device will be printed onto this output.
 The simulator will now commence sending regular telemetry to the IoT Hub...
@@ -89,6 +102,14 @@ def method_request_handler(pump_reporter: PumpReporter, device_client: device.Io
             except Exception:
                 device_client.send_method_response(
                     device.MethodResponse(method_request.request_id, 500))
+        if (method_name == "startWatering"):
+            try:
+                start_watering(pump_reporter)
+                device_client.send_method_response(
+                    device.MethodResponse(method_request.request_id, 200))
+            except Exception:
+                device_client.send_method_response(
+                    device.MethodResponse(method_request.request_id, 500))
     return handler
 
 
@@ -106,9 +127,14 @@ def cause_issue(reason: str, device_client: device.IoTHubDeviceClient) -> None:
 
 
 def stop_watering(pump_reporter: PumpReporter):
-    logging.info("Stopped watering")
     pump_reporter.set_pressure(0)
     pump_reporter.set_watering(False)
+    logging.info("Stopped watering")
+
+
+def start_watering(pump_reporter: PumpReporter):
+    pump_reporter.set_watering(True)
+    logging.info("Started watering")
 
 
 def reset_alarm(device_client: device.IoTHubDeviceClient):
