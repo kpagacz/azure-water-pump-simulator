@@ -1,6 +1,7 @@
 import threading
 import json
 import logging
+import random
 from time import sleep
 from datetime import datetime
 from azure.iot.device import IoTHubDeviceClient, Message
@@ -48,7 +49,7 @@ class PumpReporter(threading.Thread):
     def prepare_message(self) -> str:
         payload: dict = {
             "timestamp": datetime.now().isoformat(),
-            "pressure": self._pressure,
+            "pressure": max(self._pressure + random.uniform(-1.0, 1.0) * self._is_watering, 0),
             "is_watering": self._is_watering
         }
         return Message(json.dumps(payload).encode("utf-8"), content_encoding="utf-8", content_type="application/json")

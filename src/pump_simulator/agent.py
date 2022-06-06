@@ -17,7 +17,7 @@ def agent():
       simulate --version
 
     Options:
-      -c --conn-string=<connection_string>    The Azure IoT Connection String.
+      -c --conn-string=<connection_string>    The Azure IoT Device Primary Connection String.
       -v --verbose                            Increase logging verbosity.
       -h --help                               Show this help page.
       --version                               Show the version.
@@ -36,7 +36,10 @@ def agent():
     welcome_message: str = """Welcome to the Azure IoT Water Pump Simulator v0.1.0
 
 This application sends simulated water pressure readings to the IoT Hub every 5 seonds
-along with the flag whether the watering is happening.
+along with the flag whether the watering is happening as IoT Hub Events.
+
+Additionally, this application reports `watering_power` and `alarm_state` as twin device
+properties.
 
 On top of that this application exposes direct methods:
 * causeIssue that triggers an alarm
@@ -147,7 +150,7 @@ def reset_alarm(device_client: device.IoTHubDeviceClient):
 def receive_desired_twin_handler(pump_reporter: PumpReporter, device_client: device.IoTHubDeviceClient):
     def handler(desired_properties: dict):
         logging.info(
-            "Receive a patch to the desired properties: %s", desired_properties)
+            "Received a patch to the desired properties: %s", desired_properties)
         if ("watering_power" in desired_properties.keys()):
             if(isinstance(desired_properties["watering_power"], (int, float)) is False
                or desired_properties["watering_power"] < 0):
